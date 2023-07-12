@@ -1,0 +1,66 @@
+version: "3.7"
+services:
+  app:
+    build:
+      args:
+        user: pdi
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: pdi
+    container_name: pdi-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - pdi    
+      - banco
+      - rabbitmq
+
+  db:
+    image: mysql:latest
+    container_name: pdi-mysql
+    restart: always
+    ports:
+      - 3306:3306    
+    environment:
+      MYSQL_ROOT_PASSWORD: senha
+      MYSQL_DATABASE: pdi
+    volumes:
+      #- ./dados_mysql:/var/lib/mysql
+      - ./.mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - banco
+
+  rabbitmq:
+    image: rabbitmq:3.9.8-management
+    container_name: pdi-rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - rabbitmq      
+
+  nginx:
+    image: nginx:alpine
+    container_name: pdi-nginx
+    restart: unless-stopped
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/var/www
+      - ./vendor:/var/www/vendor
+      - ./.nginx:/etc/nginx/conf.d/
+    networks:
+      - pdi
+      - banco
+      - rabbitmq
+
+networks:
+  pdi:
+    driver: bridge
+  banco:
+    driver: bridge
+  rabbitmq:
+    driver: bridge
