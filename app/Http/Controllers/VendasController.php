@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Produto;
 use App\Models\Venda;
 use App\Models\ProdutoVenda;
+use App\Jobs\EnviaEmail;
 use Illuminate\Support\Facades\DB;
 
 class VendasController extends Controller
@@ -59,7 +60,7 @@ class VendasController extends Controller
             ->where('produtos.id', '=',  $request->produto)
             ->first();
             $valorTotal = $request->quantidade * $sql->valor;
-            $valorImposto = $valorTotal - ($valorTotal * ($sql->imposto / 100 ));
+            $valorImposto = $valorTotal + ($valorTotal * ($sql->imposto / 100 ));
 
             ProdutoVenda::create([
                 'produto_id' => $request->produto,
@@ -85,7 +86,9 @@ class VendasController extends Controller
         $venda->update([
             'status' => 'F'
         ]);
-
+        
+        dispatch(new EnviaEmail('victor.marques17@gmail.com'));
+        
         return redirect()
         ->action('VendasController@index');
     }
